@@ -1,1 +1,1 @@
-export const DATABASE_NAME = "DATABASE_NAME"
+export const DATABASE_NAME = "sabzi-khata"
