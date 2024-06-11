@@ -66,7 +66,6 @@ const userSchema = new Schema(
         },
         refreshToken: {
             type: String,
-            default: null
         }
     },
     { timestamps: true }
