@@ -93,21 +93,24 @@ const updateSupplier = asyncHandler(async (req, res) => {
 })
 
 const getSuppliers = asyncHandler(async (req, res) => {
-    const suppliers = await Supplier.find({ user_id: req.user._id })
+    const user_id = req.user.isAdmin ? req.user._id : req.user.user_id;
+
+    const suppliers = await Supplier.find({ user_id })
 
     return res.json(new ApiResponse(200, suppliers, "Suppliers fetched successfully"))
 })
 
 const updateSupplierStatus = asyncHandler(async (req, res) => {
-    const userId = req.params.id
-    let supplier = await Supplier.findById(userId)
+    const supplierId = req.params.id
+    let supplier = await Supplier.findById(supplierId)
+
     if (!supplier) {
         return res.status(404).send(new ApiResponse(404, "Supplier not found"))
     }
 
     const status = supplier.status === 0 ? 1 : 0;
 
-    supplier = await Supplier.findByIdAndUpdate(userId, { status }, { new: true })
+    supplier = await Supplier.findByIdAndUpdate(supplierId, { status }, { new: true })
 
     return res.json(new ApiResponse(200, supplier, "Supplier status updated successfully"))
 })

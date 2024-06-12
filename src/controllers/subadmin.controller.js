@@ -34,7 +34,9 @@ const addSubadmin = asyncHandler(async (req, res) => {
 })
 
 const getSubadmins = asyncHandler(async (req, res) => {
-    const subadmins = await User.find({ $and: [{ user_id: req.user._id }, { isAdmin: false }] }).select("-password -refreshToken")
+    const user_id = req.user.isAdmin ? req.user._id : req.user.user_id;
+
+    const subadmins = await User.find({ $and: [{ user_id }, { isAdmin: false }] }).select("-password -refreshToken")
 
     return res.json(new ApiResponse(200, subadmins, "Subadmins fetched successfully"))
 })

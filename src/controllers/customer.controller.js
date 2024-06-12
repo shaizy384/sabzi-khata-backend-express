@@ -93,21 +93,24 @@ const updateCustomer = asyncHandler(async (req, res) => {
 })
 
 const getCustomers = asyncHandler(async (req, res) => {
-    const customers = await Customer.find({ user_id: req.user._id })
+    const user_id = req.user.isAdmin ? req.user._id : req.user.user_id;
+
+    const customers = await Customer.find({ user_id })
 
     return res.json(new ApiResponse(200, customers, "Customers fetched successfully"))
 })
 
 const updateCustomerStatus = asyncHandler(async (req, res) => {
-    const userId = req.params.id
-    let customer = await Customer.findById(userId)
+    const customerId = req.params.id
+    let customer = await Customer.findById(customerId)
+    
     if (!customer) {
         return res.status(404).send(new ApiResponse(404, "Customer not found"))
     }
 
     const status = customer.status === 0 ? 1 : 0;
 
-    customer = await Customer.findByIdAndUpdate(userId, { status }, { new: true })
+    customer = await Customer.findByIdAndUpdate(customer._id, { status }, { new: true })
 
     return res.json(new ApiResponse(200, customer, "Customer status updated successfully"))
 })
