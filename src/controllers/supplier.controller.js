@@ -66,6 +66,7 @@ const updateSupplier = asyncHandler(async (req, res) => {
 
     if (profilesImageLocal) {
         profile_image = await uploadOnCloudinary(profilesImageLocal)
+        profile_image = profile_image?.url
 
         if (!profile_image) {
             return res.status(400).send(new ApiError(400, "Profile image is required"))
