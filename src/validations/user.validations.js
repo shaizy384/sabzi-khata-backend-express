@@ -42,7 +42,7 @@ const addSubadminValidation = {
 //         customer: Joi.number().required(),
 //         customer_report: Joi.number().required(),
 //         supplier_report: Joi.number().required(),
-//     })
+//     }).unknown(true);
 // }
 
 const deletedSubadminValidation = {
