@@ -100,6 +100,34 @@ const getSuppliers = asyncHandler(async (req, res) => {
     return res.json(new ApiResponse(200, suppliers, "Suppliers fetched successfully"))
 })
 
+const getSupplier = asyncHandler(async (req, res) => {
+    const supplier_id = req.params._id
+    const user_id = req.user.isAdmin ? req.user._id : req.user.user_id;
+
+    const supplier = await Supplier.aggregate([
+        {
+            $match: {
+                $expr: {
+                    $and: [
+                        { user_id },
+                        { _id: supplier_id }
+                    ]
+                }
+            }
+        },
+        {
+            $lookup: {
+                from: "suppliertransactions",
+                localField: "_id",
+                foreignField: "supplier_id",
+                as: "transactions"
+            }
+        }
+    ])
+
+    return res.json(new ApiResponse(200, supplier[0], "Supplier fetched successfully"))
+})
+
 const updateSupplierStatus = asyncHandler(async (req, res) => {
     const supplierId = req.params.id
     let supplier = await Supplier.findById(supplierId)
@@ -115,4 +143,4 @@ const updateSupplierStatus = asyncHandler(async (req, res) => {
     return res.json(new ApiResponse(200, supplier, "Supplier status updated successfully"))
 })
 
-export { addSupplier, updateSupplier, getSuppliers, updateSupplierStatus }
+export { addSupplier, updateSupplier, getSuppliers, getSupplier, updateSupplierStatus }

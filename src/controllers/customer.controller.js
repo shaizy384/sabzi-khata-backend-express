@@ -100,10 +100,38 @@ const getCustomers = asyncHandler(async (req, res) => {
     return res.json(new ApiResponse(200, customers, "Customers fetched successfully"))
 })
 
+const getCustomer = asyncHandler(async (req, res) => {
+    const customer_id = req.params._id
+    const user_id = req.user.isAdmin ? req.user._id : req.user.user_id;
+
+    const customer = await Customer.aggregate([
+        {
+            $match: {
+                $expr: {
+                    $and: [
+                        { user_id },
+                        { _id: customer_id }
+                    ]
+                }
+            }
+        },
+        {
+            $lookup: {
+                from: "customertransactions",
+                localField: "_id",
+                foreignField: "customer_id",
+                as: "transactions"
+            }
+        }
+    ])
+
+    return res.json(new ApiResponse(200, customer[0], "Customer fetched successfully"))
+})
+
 const updateCustomerStatus = asyncHandler(async (req, res) => {
     const customerId = req.params.id
     let customer = await Customer.findById(customerId)
-    
+
     if (!customer) {
         return res.status(404).send(new ApiResponse(404, "Customer not found"))
     }
@@ -115,4 +143,4 @@ const updateCustomerStatus = asyncHandler(async (req, res) => {
     return res.json(new ApiResponse(200, customer, "Customer status updated successfully"))
 })
 
-export { addCustomer, updateCustomer, getCustomers, updateCustomerStatus }
+export { addCustomer, updateCustomer, getCustomers, getCustomer, updateCustomerStatus }
