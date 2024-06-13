@@ -14,11 +14,19 @@ const addCustomerTransaction = asyncHandler(async (req, res) => {
 
     const customer = await Customer.findById(req.body.customer_id)
     if (!customer) {
-        return res.status(400).send(new ApiError(400, "Customer not found"))
+        return res.status(404).send(new ApiError(404, "Customer not found"))
     }
 
     const user_id = req.user.isAdmin ? req.user._id : req.user.user_id
     const sub_admin_id = req.user.isAdmin ? null : req.user._id
+
+    customer = await Customer.findByIdAndUpdate(
+        req.body.customer_id,
+        {
+            amount: req.body.remaining_amount
+        },
+        { new: true }
+    )
 
     const transaction = await CustomerTransactions.create({
         ...req.body,

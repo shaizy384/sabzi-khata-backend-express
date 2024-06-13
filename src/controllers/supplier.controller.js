@@ -1,9 +1,11 @@
+import { Purchase } from "../models/purchase.models.js";
 import { Supplier } from "../models/supplier.models.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { addCustSupValidation, updateCustSupValidation } from "../validations/custAndSup.validations.js";
+import { addPurchaseValidation } from "../validations/salePurchase.validations.js";
 
 const addSupplier = asyncHandler(async (req, res) => {
     const { phone, cnic } = req.body
@@ -143,4 +145,38 @@ const updateSupplierStatus = asyncHandler(async (req, res) => {
     return res.json(new ApiResponse(200, supplier, "Supplier status updated successfully"))
 })
 
-export { addSupplier, updateSupplier, getSuppliers, getSupplier, updateSupplierStatus }
+const addPurchase = asyncHandler(async (req, res) => {
+
+    const { error } = addPurchaseValidation.body.validate(req.body)
+    if (error) {
+        return res.status(400).send(new ApiError(400, error.details[0].message))
+    }
+
+    let supplier = await Supplier.findById(req.body.purchases[0].supplier_id)
+    if (!supplier) {
+        return res.status(404).send(new ApiError(404, "Supplier not found"))
+    }
+
+    const user_id = req.user.isAdmin ? req.user._id : req.user.user_id
+    const sub_admin_id = req.user.isAdmin ? null : req.user._id
+
+    supplier = await Supplier.findByIdAndUpdate(
+        req.body.purchases[0].supplier_id,
+        {
+            amount: req.body.total_amount
+        },
+        { new: true }
+    )
+
+    let purchases = req.body.purchases.map(sale => ({
+        ...sale,
+        user_id,
+        sub_admin_id
+    }));
+
+    purchases = await Purchase.insertMany(purchases)
+
+    return res.json(new ApiResponse(200, purchases, "Purchases added successfully"))
+})
+
+export { addSupplier, updateSupplier, getSuppliers, getSupplier, updateSupplierStatus, addPurchase }

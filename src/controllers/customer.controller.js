@@ -1,9 +1,11 @@
 import { Customer } from "../models/customer.models.js";
+import { Sale } from "../models/sale.models.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { addCustSupValidation, updateCustSupValidation } from "../validations/custAndSup.validations.js";
+import { addSaleValidation } from "../validations/salePurchase.validations.js";
 
 const addCustomer = asyncHandler(async (req, res) => {
     const { phone, cnic } = req.body
@@ -143,4 +145,39 @@ const updateCustomerStatus = asyncHandler(async (req, res) => {
     return res.json(new ApiResponse(200, customer, "Customer status updated successfully"))
 })
 
-export { addCustomer, updateCustomer, getCustomers, getCustomer, updateCustomerStatus }
+
+const addSale = asyncHandler(async (req, res) => {
+
+    const { error } = addSaleValidation.body.validate(req.body)
+    if (error) {
+        return res.status(400).send(new ApiError(400, error.details[0].message))
+    }
+
+    let customer = await Customer.findById(req.body.sales[0].customer_id)
+    if (!customer) {
+        return res.status(404).send(new ApiError(404, "Customer not found"))
+    }
+
+    const user_id = req.user.isAdmin ? req.user._id : req.user.user_id
+    const sub_admin_id = req.user.isAdmin ? null : req.user._id
+
+    customer = await Customer.findByIdAndUpdate(
+        req.body.sales[0].customer_id,
+        {
+            amount: req.body.total_amount
+        },
+        { new: true }
+    )
+
+    let sales = req.body.sales.map(sale => ({
+        ...sale,
+        user_id,
+        sub_admin_id
+    }));
+
+    sales = await Sale.insertMany(sales)
+
+    return res.json(new ApiResponse(200, sales, "Sales added successfully"))
+})
+
+export { addCustomer, updateCustomer, getCustomers, getCustomer, updateCustomerStatus, addSale }

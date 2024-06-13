@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { verifyJwt } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
-import { addCustomer, getCustomer, getCustomers, updateCustomer, updateCustomerStatus } from "../controllers/customer.controller.js";
+import { addCustomer, addSale, getCustomer, getCustomers, updateCustomer, updateCustomerStatus } from "../controllers/customer.controller.js";
 import { addCustomerTransaction, getCustomerTransactions } from "../controllers/customerTransactions.controller.js";
 
 const router = Router()
@@ -16,5 +16,6 @@ router.route("/updateStatus/:id").get(updateCustomerStatus)
 
 router.route("/addCustomerTransaction").post(addCustomerTransaction)
 // router.route("/getCustomerTransactions/:id").get(getCustomerTransactions)
+router.route("/addSale").post(addSale)
 
 export default router

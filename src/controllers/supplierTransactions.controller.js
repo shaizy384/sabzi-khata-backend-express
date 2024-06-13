@@ -14,11 +14,19 @@ const addSupplierTransaction = asyncHandler(async (req, res) => {
 
     const supplier = await Supplier.findById(req.body.supplier_id)
     if (!supplier) {
-        return res.status(400).send(new ApiError(400, "Supplier not found"))
+        return res.status(404).send(new ApiError(404, "Supplier not found"))
     }
 
     const user_id = req.user.isAdmin ? req.user._id : req.user.user_id
     const sub_admin_id = req.user.isAdmin ? null : req.user._id
+
+    supplier = await Supplier.findByIdAndUpdate(
+        req.body.supplier_id,
+        {
+            amount: req.body.remaining_amount
+        },
+        { new: true }
+    )
 
     const transaction = await SupplierTransactions.create({
         ...req.body,
