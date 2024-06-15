@@ -1,5 +1,7 @@
+import mongoose from "mongoose";
 import { Purchase } from "../models/purchase.models.js";
 import { Supplier } from "../models/supplier.models.js";
+import { SupplierTransactions } from "../models/supplierTransactions.models.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -112,9 +114,48 @@ const getSupplier = asyncHandler(async (req, res) => {
                 $expr: {
                     $and: [
                         { user_id },
-                        { _id: supplier_id }
+                        { _id: new mongoose.Types.ObjectId(supplier_id) }
                     ]
                 }
+            }
+        },
+        {
+            $lookup: {
+                from: "purchases",
+                localField: "_id",
+                foreignField: "supplier_id",
+                as: "orders",
+                pipeline: [
+                    {
+                        $addFields: {
+                            date: {
+                                $dateToString: { format: "%Y-%m-%d", date: "$createdAt" }
+                            }
+                        }
+                    },
+                    {
+                        $group: {
+                            _id: "$date",
+                            ordersPerDay: { $push: "$$ROOT" },
+                            total_price: { $sum: "$price" }
+                        }
+                    },
+                    {
+                        $project: {
+                            _id: 0,
+                            date: "$_id",
+                            ordersPerDay: 1,
+                            total_price: 1
+                        }
+                    },
+                    {
+                        $addFields: {
+                            transactions: {
+                                $size: "$ordersPerDay"
+                            }
+                        }
+                    },
+                ]
             }
         },
         {
@@ -146,13 +187,15 @@ const updateSupplierStatus = asyncHandler(async (req, res) => {
 })
 
 const addPurchase = asyncHandler(async (req, res) => {
+    // person_id is the supplier_id
+    const { total_amount, previous_amount, amount_added, person_id, amount_type } = req.body
 
     const { error } = addPurchaseValidation.body.validate(req.body)
     if (error) {
         return res.status(400).send(new ApiError(400, error.details[0].message))
     }
 
-    let supplier = await Supplier.findById(req.body.purchases[0].supplier_id)
+    let supplier = await Supplier.findById(person_id)
     if (!supplier) {
         return res.status(404).send(new ApiError(404, "Supplier not found"))
     }
@@ -161,14 +204,24 @@ const addPurchase = asyncHandler(async (req, res) => {
     const sub_admin_id = req.user.isAdmin ? null : req.user._id
 
     supplier = await Supplier.findByIdAndUpdate(
-        req.body.purchases[0].supplier_id,
+        supplier._id,
         {
-            amount: req.body.total_amount
+            amount: total_amount
         },
         { new: true }
     )
 
-    let purchases = req.body.purchases.map(sale => ({
+    const transaction = await SupplierTransactions.create({
+        amount_type,
+        remaining_amount: total_amount,
+        previous_amount,
+        amount_added,
+        supplier_id: supplier._id,
+        user_id,
+        sub_admin_id
+    })
+
+    let purchases = req.body.sales.map(sale => ({
         ...sale,
         user_id,
         sub_admin_id

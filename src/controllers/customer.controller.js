@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { Customer } from "../models/customer.models.js";
 import { Sale } from "../models/sale.models.js";
 import { ApiError } from "../utils/ApiError.js";
@@ -6,9 +7,12 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { addCustSupValidation, updateCustSupValidation } from "../validations/custAndSup.validations.js";
 import { addSaleValidation } from "../validations/salePurchase.validations.js";
+import { CustomerTransactions } from "../models/customerTransactions.models.js";
 
 const addCustomer = asyncHandler(async (req, res) => {
+    console.log("req.body ", req.body);
     const { phone, cnic } = req.body
+    console.log("req.file: ", req.file);
 
     const { error } = addCustSupValidation.body.validate(req.body)
     if (error) {
@@ -103,18 +107,57 @@ const getCustomers = asyncHandler(async (req, res) => {
 })
 
 const getCustomer = asyncHandler(async (req, res) => {
-    const customer_id = req.params._id
+    const customer_id = req.params.id
     const user_id = req.user.isAdmin ? req.user._id : req.user.user_id;
+
+    console.log("customer_id: ", customer_id, user_id);
 
     const customer = await Customer.aggregate([
         {
             $match: {
-                $expr: {
-                    $and: [
-                        { user_id },
-                        { _id: customer_id }
-                    ]
-                }
+                $and: [
+                    { _id: new mongoose.Types.ObjectId(customer_id) },
+                    { user_id: user_id }
+                ]
+            }
+        },
+        {
+            $lookup: {
+                from: "sales",
+                localField: "_id",
+                foreignField: "customer_id",
+                as: "orders",
+                pipeline: [
+                    {
+                        $addFields: {
+                            date: {
+                                $dateToString: { format: "%Y-%m-%d", date: "$createdAt" }
+                            }
+                        }
+                    },
+                    {
+                        $group: {
+                            _id: "$date",
+                            ordersPerDay: { $push: "$$ROOT" },
+                            total_price: { $sum: "$price" }
+                        }
+                    },
+                    {
+                        $project: {
+                            _id: 0,
+                            date: "$_id",
+                            ordersPerDay: 1,
+                            total_price: 1
+                        }
+                    },
+                    {
+                        $addFields: {
+                            transactions: {
+                                $size: "$ordersPerDay"
+                            }
+                        }
+                    },
+                ]
             }
         },
         {
@@ -126,6 +169,8 @@ const getCustomer = asyncHandler(async (req, res) => {
             }
         }
     ])
+
+    console.log("customer: ", customer);
 
     return res.json(new ApiResponse(200, customer[0], "Customer fetched successfully"))
 })
@@ -147,13 +192,15 @@ const updateCustomerStatus = asyncHandler(async (req, res) => {
 
 
 const addSale = asyncHandler(async (req, res) => {
+    // person_id is the supplier_id
+    const { total_amount, previous_amount, amount_added, person_id, amount_type } = req.body
 
     const { error } = addSaleValidation.body.validate(req.body)
     if (error) {
         return res.status(400).send(new ApiError(400, error.details[0].message))
     }
 
-    let customer = await Customer.findById(req.body.sales[0].customer_id)
+    let customer = await Customer.findById(person_id)
     if (!customer) {
         return res.status(404).send(new ApiError(404, "Customer not found"))
     }
@@ -162,12 +209,22 @@ const addSale = asyncHandler(async (req, res) => {
     const sub_admin_id = req.user.isAdmin ? null : req.user._id
 
     customer = await Customer.findByIdAndUpdate(
-        req.body.sales[0].customer_id,
+        customer._id,
         {
-            amount: req.body.total_amount
+            amount: total_amount
         },
         { new: true }
     )
+
+    const transaction = await CustomerTransactions.create({
+        amount_type,
+        remaining_amount: total_amount,
+        previous_amount,
+        amount_added,
+        customer_id: customer._id,
+        user_id,
+        sub_admin_id
+    })
 
     let sales = req.body.sales.map(sale => ({
         ...sale,

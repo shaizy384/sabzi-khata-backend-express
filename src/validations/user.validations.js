@@ -30,20 +30,20 @@ const addSubadminValidation = {
     })
 }
 
-// const updateSubadminValidation = {
-//     body: Joi.object({
-//         _id: Joi.string().required(),
-//         email: Joi.string().required().email(),
-//         fullName: Joi.string().required(),
+const updateSubadminValidation = {
+    body: Joi.object({
+        _id: Joi.string().required(),
+        email: Joi.string().required().email(),
+        fullName: Joi.string().required(),
 
-//         dashboard: Joi.number().required(),
-//         product: Joi.number().required(),
-//         supplier: Joi.number().required(),
-//         customer: Joi.number().required(),
-//         customer_report: Joi.number().required(),
-//         supplier_report: Joi.number().required(),
-//     }).unknown(true);
-// }
+        dashboard: Joi.number().required(),
+        product: Joi.number().required(),
+        supplier: Joi.number().required(),
+        customer: Joi.number().required(),
+        customer_report: Joi.number().required(),
+        supplier_report: Joi.number().required(),
+    }).unknown(true)
+}
 
 const deletedSubadminValidation = {
     params: Joi.object({
@@ -51,4 +51,11 @@ const deletedSubadminValidation = {
     })
 }
 
-export { register, login, addSubadminValidation, deletedSubadminValidation }
+const updateSubPasswordValidation = {
+    body: Joi.object({
+        _id: Joi.string().required(),
+        password: Joi.string().required()
+    })
+}
+
+export { register, login, addSubadminValidation, updateSubadminValidation, deletedSubadminValidation, updateSubPasswordValidation }

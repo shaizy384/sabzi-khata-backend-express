@@ -2,7 +2,7 @@ import { User } from "../models/user.models.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { addSubadminValidation, deletedSubadminValidation } from "../validations/user.validations.js";
+import { addSubadminValidation, deletedSubadminValidation, updateSubPasswordValidation, updateSubadminValidation } from "../validations/user.validations.js";
 
 const addSubadmin = asyncHandler(async (req, res) => {
     const { email } = req.body
@@ -43,10 +43,10 @@ const getSubadmins = asyncHandler(async (req, res) => {
 
 const updateSubadmin = asyncHandler(async (req, res) => {
 
-    // const { error } = updateSubadminValidation.body.validate(req.body);
-    // if (error) {
-    //     return res.status(400).send(new ApiError(400, error.details[0].message))
-    // }
+    const { error } = updateSubadminValidation.body.validate(req.body);
+    if (error) {
+        return res.status(400).send(new ApiError(400, error.details[0].message))
+    }
 
     const { _id } = req.body
 
@@ -70,6 +70,32 @@ const updateSubadmin = asyncHandler(async (req, res) => {
     return res.json(new ApiResponse(200, subadmin, "Subadmin updated successfully"))
 })
 
+const updateSubadminPassword = asyncHandler(async (req, res) => {
+
+    const { error } = updateSubPasswordValidation.body.validate(req.body);
+    if (error) {
+        return res.status(400).send(new ApiError(400, error.details[0].message))
+    }
+
+    const { _id, password } = req.body
+
+    const subadmin = await User.findByIdAndUpdate(
+        _id,
+        {
+            password
+        },
+        {
+            new: true
+        }
+    ).select("-password -refreshToken")
+
+    if (!subadmin) {
+        return res.status(404).send(new ApiError(404, "Subadmin not exists"))
+    }
+
+    return res.json(new ApiResponse(200, subadmin, "Subadmin password updated successfully"))
+})
+
 const deleteSubadmin = asyncHandler(async (req, res) => {
 
     const { error } = deletedSubadminValidation.params.validate(req.params);
@@ -83,7 +109,7 @@ const deleteSubadmin = asyncHandler(async (req, res) => {
         return res.status(404).send(new ApiError(404, "Subadmin not exists"))
     }
 
-    return res.send(new ApiResponse(200, deleteUser, "Saubadmin deleted successfully"))
+    return res.send(new ApiResponse(200, deletedSubadmin, "Saubadmin deleted successfully"))
 })
 
-export { addSubadmin, getSubadmins, updateSubadmin, deleteSubadmin }
+export { addSubadmin, getSubadmins, updateSubadmin, updateSubadminPassword, deleteSubadmin }

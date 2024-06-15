@@ -5,6 +5,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { addProductValidation, updateProductValidation } from "../validations/product.validations.js";
 
 const addProduct = asyncHandler(async (req, res) => {
+    console.log("req.body ", req.body);
 
     const { error } = addProductValidation.body.validate(req.body)
     if (error) {
@@ -23,7 +24,7 @@ const addProduct = asyncHandler(async (req, res) => {
     const createdProduct = await Product.findById(product._id)
 
     if (!createdProduct) {
-        return res.status(500).send(new ApiError(500, "Something went wrong will creating product"))
+        return res.status(500).send(new ApiError(500, "Something went wrong while creating product"))
     }
 
     return res.json(new ApiResponse(200, createdProduct, "Product added successfully"))
@@ -78,7 +79,7 @@ const updateProductStatus = asyncHandler(async (req, res) => {
 
     const status = product.status === 0 ? 1 : 0;
 
-    product = await product.findByIdAndUpdate(userId, { status }, { new: true })
+    product = await Product.findByIdAndUpdate(product._id, { status }, { new: true })
 
     return res.json(new ApiResponse(200, product, "Product status updated successfully"))
 })

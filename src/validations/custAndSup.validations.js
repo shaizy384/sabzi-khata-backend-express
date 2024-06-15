@@ -7,7 +7,7 @@ const addCustSupValidation = {
         cnic: Joi.number().required(),
         address: Joi.string().required(),
         amount: Joi.number().required(),
-        // profile_image: Joi.string().required(),
+        // profile_image: Joi.object().required(),
     })
 }
 

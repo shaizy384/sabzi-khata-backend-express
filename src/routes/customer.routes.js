@@ -9,7 +9,7 @@ const router = Router()
 router.use(verifyJwt)
 
 router.route("/addCustomer").post(upload.single("profile_image"), addCustomer)
-router.route("/updateCustomer").post(upload.single("profile_image"), updateCustomer)
+router.route("/updateCustomer").patch(upload.single("profile_image"), updateCustomer)
 router.route("/getCustomers").get(getCustomers)
 router.route("/getCustomer/:id").get(getCustomer)
 router.route("/updateStatus/:id").get(updateCustomerStatus)
