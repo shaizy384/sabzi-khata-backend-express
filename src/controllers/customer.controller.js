@@ -276,4 +276,53 @@ const addCustomerCash = asyncHandler(async (req, res) => {
     return res.json(new ApiResponse(200, customer, "Cash added successfully"))
 })
 
-export { addCustomer, updateCustomer, getCustomers, getCustomer, updateCustomerStatus, addSale, addCustomerCash }
+const getCustomerTransactionReport = asyncHandler(async (req, res) => {
+
+    const user_id = req.user.isAdmin ? req.user._id : req.user.user_id
+    const sub_admin_id = req.user.isAdmin ? null : req.user._id
+
+    const customer_report = await Customer.aggregate([
+        {
+            $match: {
+                user_id: user_id
+            }
+        },
+        {
+            $lookup: {
+                from: 'customertransactions',
+                localField: '_id',
+                foreignField: 'customer_id',
+                as: 'transaction',
+                pipeline: [
+                    {
+                        $sort: {
+                            'createdAt': -1
+                        }
+                    },
+                ]
+            },
+        },
+        {
+            $addFields: {
+                transaction: {
+                    $first: "$transaction"
+                }
+            }
+        },
+        {
+            $group: {
+                _id: "$_id",
+                name: { $first: '$name' },
+                address: { $first: '$address' },
+                amount_added: { $first: '$transaction.amount_added' },
+                previous_amount: { $first: '$transaction.previous_amount' },
+                remaining_amount: { $first: '$transaction.remaining_amount' },
+                customer_id: { $first: '$transaction.customer_id' }
+            }
+        }
+    ])
+
+    return res.json(new ApiResponse(200, customer_report, "Customer Report added successfully"))
+})
+
+export { addCustomer, updateCustomer, getCustomers, getCustomer, updateCustomerStatus, addSale, addCustomerCash, getCustomerTransactionReport }

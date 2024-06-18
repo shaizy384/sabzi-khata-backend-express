@@ -271,4 +271,53 @@ const addSupplierCash = asyncHandler(async (req, res) => {
     return res.json(new ApiResponse(200, supplier, "Cash added successfully"))
 })
 
-export { addSupplier, updateSupplier, getSuppliers, getSupplier, updateSupplierStatus, addPurchase, addSupplierCash }
+const getSupplierTransactionReport = asyncHandler(async (req, res) => {
+
+    const user_id = req.user.isAdmin ? req.user._id : req.user.user_id
+    const sub_admin_id = req.user.isAdmin ? null : req.user._id
+
+    const supplier_report = await Supplier.aggregate([
+        {
+            $match: {
+                user_id: user_id
+            }
+        },
+        {
+            $lookup: {
+                from: 'suppliertransactions',
+                localField: '_id',
+                foreignField: 'supplier_id',
+                as: 'transaction',
+                pipeline: [
+                    {
+                        $sort: {
+                            'createdAt': -1
+                        }
+                    },
+                ]
+            },
+        },
+        {
+            $addFields: {
+                transaction: {
+                    $first: "$transaction"
+                }
+            }
+        },
+        {
+            $group: {
+                _id: "$_id",
+                name: { $first: '$name' },
+                address: { $first: '$address' },
+                amount_added: { $first: '$transaction.amount_added' },
+                previous_amount: { $first: '$transaction.previous_amount' },
+                remaining_amount: { $first: '$transaction.remaining_amount' },
+                supplier_id: { $first: '$transaction.supplier_id' }
+            }
+        }
+    ])
+
+    return res.json(new ApiResponse(200, supplier_report, "Customer Report added successfully"))
+})
+
+export { addSupplier, updateSupplier, getSuppliers, getSupplier, updateSupplierStatus, addPurchase, addSupplierCash, getSupplierTransactionReport }
