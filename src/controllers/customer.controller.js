@@ -8,6 +8,7 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { addCustSupValidation, updateCustSupValidation } from "../validations/custAndSup.validations.js";
 import { addSaleValidation } from "../validations/salePurchase.validations.js";
 import { CustomerTransactions } from "../models/customerTransactions.models.js";
+import { addCashValidation } from "../validations/addCashValidation.validations.js";
 
 const addCustomer = asyncHandler(async (req, res) => {
     console.log("req.body ", req.body);
@@ -192,7 +193,7 @@ const updateCustomerStatus = asyncHandler(async (req, res) => {
 
 
 const addSale = asyncHandler(async (req, res) => {
-    // person_id is the supplier_id
+    // person_id is the customer_id
     const { total_amount, previous_amount, amount_added, person_id, amount_type } = req.body
 
     const { error } = addSaleValidation.body.validate(req.body)
@@ -237,4 +238,42 @@ const addSale = asyncHandler(async (req, res) => {
     return res.json(new ApiResponse(200, sales, "Sales added successfully"))
 })
 
-export { addCustomer, updateCustomer, getCustomers, getCustomer, updateCustomerStatus, addSale }
+const addCustomerCash = asyncHandler(async (req, res) => {
+    // person_id is the customer_id
+    const { remaining_amount, previous_amount, amount_added, person_id, amount_type } = req.body
+
+    const { error } = addCashValidation.body.validate(req.body)
+    if (error) {
+        return res.status(400).send(new ApiError(400, error.details[0].message))
+    }
+
+    let customer = await Customer.findById(person_id)
+    if (!customer) {
+        return res.status(404).send(new ApiError(404, "Customer not found"))
+    }
+
+    const user_id = req.user.isAdmin ? req.user._id : req.user.user_id
+    const sub_admin_id = req.user.isAdmin ? null : req.user._id
+
+    customer = await Customer.findByIdAndUpdate(
+        customer._id,
+        {
+            amount: remaining_amount
+        },
+        { new: true }
+    )
+
+    const transaction = await CustomerTransactions.create({
+        amount_type,
+        remaining_amount,
+        previous_amount,
+        amount_added,
+        customer_id: customer._id,
+        user_id,
+        sub_admin_id
+    })
+
+    return res.json(new ApiResponse(200, customer, "Cash added successfully"))
+})
+
+export { addCustomer, updateCustomer, getCustomers, getCustomer, updateCustomerStatus, addSale, addCustomerCash }

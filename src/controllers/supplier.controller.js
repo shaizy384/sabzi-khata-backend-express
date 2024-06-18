@@ -8,6 +8,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { addCustSupValidation, updateCustSupValidation } from "../validations/custAndSup.validations.js";
 import { addPurchaseValidation } from "../validations/salePurchase.validations.js";
+import { addCashValidation } from "../validations/addCashValidation.validations.js";
 
 const addSupplier = asyncHandler(async (req, res) => {
     const { phone, cnic } = req.body
@@ -232,4 +233,42 @@ const addPurchase = asyncHandler(async (req, res) => {
     return res.json(new ApiResponse(200, purchases, "Purchases added successfully"))
 })
 
-export { addSupplier, updateSupplier, getSuppliers, getSupplier, updateSupplierStatus, addPurchase }
+const addSupplierCash = asyncHandler(async (req, res) => {
+    // person_id is the supplier_id
+    const { remaining_amount, previous_amount, amount_added, person_id, amount_type } = req.body
+
+    const { error } = addCashValidation.body.validate(req.body)
+    if (error) {
+        return res.status(400).send(new ApiError(400, error.details[0].message))
+    }
+
+    let supplier = await Supplier.findById(person_id)
+    if (!supplier) {
+        return res.status(404).send(new ApiError(404, "Supplier not found"))
+    }
+
+    const user_id = req.user.isAdmin ? req.user._id : req.user.user_id
+    const sub_admin_id = req.user.isAdmin ? null : req.user._id
+
+    supplier = await Supplier.findByIdAndUpdate(
+        supplier._id,
+        {
+            amount: remaining_amount
+        },
+        { new: true }
+    )
+
+    const transaction = await SupplierTransactions.create({
+        amount_type,
+        remaining_amount,
+        previous_amount,
+        amount_added,
+        supplier_id: supplier._id,
+        user_id,
+        sub_admin_id
+    })
+
+    return res.json(new ApiResponse(200, supplier, "Cash added successfully"))
+})
+
+export { addSupplier, updateSupplier, getSuppliers, getSupplier, updateSupplierStatus, addPurchase, addSupplierCash }

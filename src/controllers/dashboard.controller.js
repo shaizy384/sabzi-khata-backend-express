@@ -113,7 +113,7 @@ const getDashboardStats = asyncHandler(async (req, res) => {
         {
             $project: {
                 _id: 0,
-                total_sales: { $ifNull: ["$total_sales", 0] },
+                today_sale: { $ifNull: ["$today_sale", 0] },
                 amount_received: { $ifNull: ["$amount_received", 0] }
             }
         }
