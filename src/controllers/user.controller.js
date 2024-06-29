@@ -21,8 +21,7 @@ const generateAccessAndRefreshToken = async (userId) => {
 }
 
 const registerUser = asyncHandler(async (req, res) => {
-    const { fullName, email, password } = req.body
-
+    const { email } = req.body
     const { error, value } = register.body.validate(req.body);
 
     if (error) {
@@ -32,7 +31,7 @@ const registerUser = asyncHandler(async (req, res) => {
     const isUserExist = await User.findOne({ email });
 
     if (isUserExist) {
-        return res.status(409).send(new ApiError(409, "This email already exists"))
+        return res.status(409).send(new ApiError(409, "This user already exists"))
     }
 
     const user = await User.create({
@@ -46,7 +45,19 @@ const registerUser = asyncHandler(async (req, res) => {
         return res.status(500).send(new ApiError(500, "Something went wrong while registering user"))
     }
 
-    return res.json(new ApiResponse(200, createdUser, "User is registered successfully"))
+    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id)
+
+    const registeredUser = await User.findById(user._id).select("-password -refreshToken")
+
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+
+    return res.status(200)
+        .cookie("refreshToken", refreshToken, options)
+        .cookie("accessToken", accessToken, options)
+        .json(new ApiResponse(200, { accessToken, refreshToken, registeredUser }, "User is registered successfully"))
 })
 
 const loginUser = asyncHandler(async (req, res) => {
@@ -79,7 +90,7 @@ const loginUser = asyncHandler(async (req, res) => {
         secure: true
     }
 
-    res.status(201)
+    return res.status(201)
         .cookie("accessToken", accessToken, options)
         .cookie("refreshToken", refreshToken, options)
         .json(
