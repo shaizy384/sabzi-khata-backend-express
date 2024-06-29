@@ -13,7 +13,7 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     const startOfDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0));
     const endOfDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0));
 
-    const customerStats = await Customer.aggregate([
+    let customerStats = await Customer.aggregate([
         {
             $match: { user_id }
         },
@@ -29,7 +29,7 @@ const getDashboardStats = asyncHandler(async (req, res) => {
         }
     ])
 
-    const today_sale = await CustomerTransactions.aggregate([
+    let today_sale = await CustomerTransactions.aggregate([
         {
             $match: {
                 user_id,
@@ -65,7 +65,7 @@ const getDashboardStats = asyncHandler(async (req, res) => {
         { $project: { _id: 0 } }
     ])
 
-    const supplierStats = await Customer.aggregate([
+    let supplierStats = await Customer.aggregate([
         {
             $match: { user_id }
         },
