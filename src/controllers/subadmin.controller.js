@@ -16,7 +16,6 @@ const addSubadmin = asyncHandler(async (req, res) => {
     if (isSubadminExist) {
         return res.status(400).send(new ApiError(400, "Subadmin already exists"))
     }
-    console.log("req.user._id: ", req.user._id);
     const subadmin = await User.create({
         ...req.body,
         admin_roles: 0,

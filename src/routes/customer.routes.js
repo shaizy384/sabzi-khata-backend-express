@@ -14,8 +14,6 @@ router.route("/getCustomers").get(getCustomers)
 router.route("/getCustomer/:id").get(getCustomer)
 router.route("/updateStatus/:id").get(updateCustomerStatus)
 
-// router.route("/addCustomerTransaction").post(addCustomerTransaction)
-// router.route("/getCustomerTransactions/:id").get(getCustomerTransactions)
 router.route("/addSale").post(addSale)
 router.route("/addCash").post(addCustomerCash)
 router.route("/getTransactionReport").get(getCustomerTransactionReport)

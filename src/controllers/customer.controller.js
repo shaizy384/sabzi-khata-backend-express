@@ -11,9 +11,7 @@ import { CustomerTransactions } from "../models/customerTransactions.models.js";
 import { addCashValidation } from "../validations/addCashValidation.validations.js";
 
 const addCustomer = asyncHandler(async (req, res) => {
-    console.log("req.body ", req.body);
     const { phone, cnic } = req.body
-    console.log("req.file: ", req.file);
 
     const { error } = addCustSupValidation.body.validate(req.body)
     if (error) {
@@ -24,11 +22,8 @@ const addCustomer = asyncHandler(async (req, res) => {
     if (customer) {
         return res.status(401).send(new ApiError(401, "Customer already exists with this phone no or cnic"))
     }
-    console.log("req.file: ", req.file);
 
     const profilesImageLocal = req.file?.path
-
-    console.log("profilesImageLocal: ", profilesImageLocal, req.file);
 
     const profile_image = await uploadOnCloudinary(profilesImageLocal)
 
@@ -111,8 +106,6 @@ const getCustomer = asyncHandler(async (req, res) => {
     const customer_id = req.params.id
     const user_id = req.user.isAdmin ? req.user._id : req.user.user_id;
 
-    console.log("customer_id: ", customer_id, user_id);
-
     const customer = await Customer.aggregate([
         {
             $match: {
@@ -170,8 +163,6 @@ const getCustomer = asyncHandler(async (req, res) => {
             }
         }
     ])
-
-    console.log("customer: ", customer);
 
     return res.json(new ApiResponse(200, customer[0], "Customer fetched successfully"))
 })

@@ -22,11 +22,8 @@ const addSupplier = asyncHandler(async (req, res) => {
     if (supplier) {
         return res.status(401).send(new ApiError(401, "Supplier already exists with this phone no or cnic"))
     }
-    console.log("req.file: ", req.file);
 
     const profilesImageLocal = req.file?.path
-
-    console.log("profilesImageLocal: ", profilesImageLocal, req.file);
 
     const profile_image = await uploadOnCloudinary(profilesImageLocal)
 

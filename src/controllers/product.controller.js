@@ -5,7 +5,6 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { addProductValidation, updateProductValidation } from "../validations/product.validations.js";
 
 const addProduct = asyncHandler(async (req, res) => {
-    console.log("req.body ", req.body);
 
     const { error } = addProductValidation.body.validate(req.body)
     if (error) {
