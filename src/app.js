@@ -35,7 +35,7 @@ app.use("/api/v1/suppliers", supplierRouter)
 app.use("/api/v1/products", productRouter)
 
 app.get("/", (req, res) => {
-    res.send("Sab Khata Backend")
+    res.send("Sabzi Khata Backend")
 })
 
 export { app }
