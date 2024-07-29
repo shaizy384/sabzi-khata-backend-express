@@ -2,6 +2,7 @@ import { Customer } from "../models/customer.models.js";
 import { CustomerTransactions } from "../models/customerTransactions.models.js";
 import { Purchase } from "../models/purchase.models.js";
 import { Sale } from "../models/sale.models.js";
+import { Supplier } from "../models/supplier.models.js";
 import { SupplierTransactions } from "../models/supplierTransactions.models.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -65,7 +66,7 @@ const getDashboardStats = asyncHandler(async (req, res) => {
         { $project: { _id: 0 } }
     ])
 
-    let supplierStats = await Customer.aggregate([
+    let supplierStats = await Supplier.aggregate([
         {
             $match: { user_id }
         },
