@@ -75,7 +75,7 @@ const loginUser = asyncHandler(async (req, res) => {
         return res.status(404).send(new ApiError(404, "User not found"))
     }
 
-    const isPasswordCorrect = user.isPasswordCorrect(password)
+    const isPasswordCorrect = await user.isPasswordCorrect(password)
 
     if (!isPasswordCorrect) {
         return res.status(401).send(new ApiError(401, "Invalid user credentials"))
